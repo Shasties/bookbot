@@ -224,7 +224,6 @@ async def get_rec(ctx):
                 if len(data[u]["recommendations"])>0:
                     validUsers.append(u)
         if len(validUsers) > 0:
-            print(validUsers)
             rUser = random.choice(validUsers)
             rRec = random.choice(data[rUser]["recommendations"])
             msg = rUser+" has recommended: "+rRec
