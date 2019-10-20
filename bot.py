@@ -150,6 +150,88 @@ async def prompt(ctx):
             words.append(random.choice(word_file.read().split()))
     msg = "Try to write a short story using the following words: "+" ".join(words)
     await send_message(ctx,msg)
+
+@bot.command(name='rec', help="!rec <book> adds a book into the recommendation pool")
+async def make_rec(ctx,title: str):
+    title = " ".join(ctx.message.content.split(" ")[1:])
+    with open("data.json.txt","r") as f:
+        data = json.load(f)
+    author = str(ctx.message.author)
+    # first time init
+    if "recommendations" not in data[author].keys():
+        data[author]["recommendations"] = []
+    if title not in data[author]["recommendations"]:
+        data[author]["recommendations"].append(title)
+        msg = author+" added: "+title+" to their recommendations"
+        with open("data.json.txt","w") as f:
+            json.dump(data,f)
+    else:
+        msg = "You have already recommended that book!"
+    await send_message(ctx,msg)
+
+@bot.command(name="delrec", help="!delrec <book> removes a book from your recommendations")
+async def del_rec(ctx,title: str):
+    title = " ".join(ctx.message.content.split(" ")[1:])
+    with open("data.json.txt","r") as f:
+        data = json.load(f)
+    author = str(ctx.message.author)
+    # first time init
+    if "recommendations" not in data[author].keys():
+        data[author]["recommendations"] = []
+    if title not in data[author]["recommendations"]:
+        msg = title+" is not currently in your recommendations"    
+    else:
+        data[author]["recommendations"].remove(title)
+        msg = author+" has removed: "+title+" from their recommendations"
+        with open("data.json.txt","w") as f:
+            json.dump(data,f)
+    await send_message(ctx,msg)
+
+@bot.command(name='getrec', help="!getrec displays a random recommended book. If <user> is defined, limits search to that user")
+async def get_rec(ctx):
+    rUser = None
+    rRec = None
+    msg = ""
+    # if author defined a specific user
+    if len(ctx.message.content.split(" ")) > 1:
+        rUser = ctx.message.content.split(" ")[1]
+    # import data
+    with open("data.json.txt","r") as f:
+        data = json.load(f)
+    # search if user exists
+    if rUser and rUser not in data.keys():
+        # Did the author forget to type user # ?
+        matches = []
+        for u in data.keys():
+            if rUser in u:
+                matches.append(u)
+        if len(matches) == 0:
+            msg = "That user has not recommended anything."
+        else:
+            msg = "No user matches that name - did you mean: "+" ".join(matches)
+    # display if user has any recs
+    elif rUser:
+        if "recommendations" not in data[rUser].keys() or len(data[rUser]["recommendations"])==0:
+            msg = "That user has not recommended anything"
+        else:
+            rRec = random.choice(data[rUser]["recommendations"])
+            msg = rUser+" has recommended: "+rRec
+    # display random rec from random user
+    else:
+        validUsers = []
+        for u in data.keys():
+            if "recommendations" in data[u].keys():
+                if len(data[u]["recommendations"])>0:
+                    validUsers.append(u)
+        if len(validUsers) > 0:
+            print(validUsers)
+            rUser = random.choice(validUsers)
+            rRec = random.choice(data[rUser]["recommendations"])
+            msg = rUser+" has recommended: "+rRec
+        else:
+            msg = "No one has any recommendations :("
+    await send_message(ctx,msg)
+
 bot.run(token)
 
 
